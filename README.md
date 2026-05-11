@@ -29,12 +29,6 @@ Acceptable uses include:
 
 Do not use this repository as a ready-to-run tool against other users.
 
-## Security Note
-
-If a webhook, token, credential, or other secret was ever committed to this
-repository, assume it is compromised. Remove it from the repository, rotate or
-revoke it at the provider, and avoid reusing it anywhere else.
-
 ## Responsible Handling
 
 If you fork or study this code, keep it in a controlled environment and remove
